@@ -81,55 +81,70 @@ st.title("📅 Calendar Entry")
 st.markdown("Create calendar events and export them to ICS format.")
 
 # Form section
+# Form section
 st.subheader("Add New Event")
 
-with st.form("event_form", clear_on_submit=True):
-    # From datetime (date + time on same row)
-    st.markdown("**From**")
-    from_col1, from_col2 = st.columns(2)
-    with from_col1:
-        from_date = st.date_input("Date", value=datetime.date.today(), key="from_date")
-    with from_col2:
-        from_time = st.time_input("Time", value=datetime.time(0, 0), key="from_time", step=60)
+def sync_dates():
+    if "from_date" in st.session_state and "to_date" in st.session_state:
+        if st.session_state.to_date < st.session_state.from_date:
+            st.session_state.to_date = st.session_state.from_date
 
-    # To datetime (date + time on same row)
-    st.markdown("**To**")
-    to_col1, to_col2 = st.columns(2)
-    with to_col1:
-        # Ensure to_date min_value matches from_date
-        # Ensure default value is valid if from_date is in future
-        default_to = max(datetime.date.today(), from_date)
-        to_date = st.date_input("Date", value=default_to, min_value=from_date, key="to_date")
-    with to_col2:
-        to_time = st.time_input("Time", value=datetime.time(23, 59), key="to_time", step=60)
+# From datetime (date + time on same row)
+st.markdown("**From**")
+from_col1, from_col2 = st.columns(2)
+with from_col1:
+    from_date = st.date_input("Date", value=datetime.date.today(), key="from_date", on_change=sync_dates)
+with from_col2:
+    from_time = st.time_input("Time", value=datetime.time(0, 0), key="from_time", step=60)
 
-    repeats = st.selectbox(
-        "Repeats",
-        options=["NONE", "DAILY", "WEEKLY", "MONTHLY", "ANNUALLY"],
-        index=0
-    )
+# To datetime (date + time on same row)
+st.markdown("**To**")
+to_col1, to_col2 = st.columns(2)
+with to_col1:
+    # Ensure default value is valid if from_date is in future
+    # Using min_value ensures the UI respects the constraint
+    to_date = st.date_input("Date", value=max(datetime.date.today(), from_date), min_value=from_date, key="to_date")
+with to_col2:
+    to_time = st.time_input("Time", value=datetime.time(23, 59), key="to_time", step=60)
 
-    description = st.text_input("Description", placeholder="Enter event description")
+repeats = st.selectbox(
+    "Repeats",
+    options=["NONE", "DAILY", "WEEKLY", "MONTHLY", "ANNUALLY"],
+    index=0,
+    key="repeats"
+)
 
-    submitted = st.form_submit_button("Add Event", use_container_width=True)
+description = st.text_input("Description", placeholder="Enter event description", key="description")
 
-    if submitted:
-        if description.strip():
-            from_datetime = datetime.datetime.combine(from_date, from_time)
-            to_datetime = datetime.datetime.combine(to_date, to_time)
+submitted = st.button("Add Event", use_container_width=True)
 
-            if to_datetime >= from_datetime:
-                st.session_state.entries.append({
-                    "from_date": from_datetime,
-                    "to_date": to_datetime,
-                    "repeats": repeats,
-                    "description": description.strip()
-                })
-                st.success("Event added!")
-            else:
-                st.error("End date/time must be after start date/time.")
+if submitted:
+    if description.strip():
+        from_datetime = datetime.datetime.combine(from_date, from_time)
+        to_datetime = datetime.datetime.combine(to_date, to_time)
+
+        if to_datetime >= from_datetime:
+            st.session_state.entries.append({
+                "from_date": from_datetime,
+                "to_date": to_datetime,
+                "repeats": repeats,
+                "description": description.strip()
+            })
+            st.success("Event added!")
+            
+            # Reset form fields
+            # We can't easily reset 'value' of widgets directly in same run without rerun, 
+            # but updating session state works for next run.
+            st.session_state.description = ""
+            # Optional: reset dates to defaults if desired, or keep them. 
+            # Let's keep dates as is for easier repeat entry, or reset to today?
+            # User didn't specify, but "clear_on_submit=True" behavior implies clearing.
+            # Let's reset description at least. Dates are often useful to keep.
+            st.rerun()
         else:
-            st.error("Please enter a description.")
+            st.error("End date/time must be after start date/time.")
+    else:
+        st.error("Please enter a description.")
 
 # Table section
 st.divider()

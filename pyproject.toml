@@ -1,0 +1,9 @@
+[project]
+name = "calendar-entry"
+version = "0.1.0"
+description = "A streamlit app for creating calendar events and exporting them to ICS format for Google Calendar."
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "streamlit>=1.52.1",
+]

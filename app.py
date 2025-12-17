@@ -90,7 +90,7 @@ with st.form("event_form", clear_on_submit=True):
     with from_col1:
         from_date = st.date_input("Date", value=datetime.date.today(), key="from_date")
     with from_col2:
-        from_time = st.time_input("Time", value=datetime.time(9, 0), key="from_time")
+        from_time = st.time_input("Time", value=datetime.time(0, 0), key="from_time", step=60)
 
     # To datetime (date + time on same row)
     st.markdown("**To**")
@@ -98,7 +98,7 @@ with st.form("event_form", clear_on_submit=True):
     with to_col1:
         to_date = st.date_input("Date", value=datetime.date.today(), key="to_date")
     with to_col2:
-        to_time = st.time_input("Time", value=datetime.time(10, 0), key="to_time")
+        to_time = st.time_input("Time", value=datetime.time(23, 59), key="to_time", step=60)
 
     repeats = st.selectbox(
         "Repeats",

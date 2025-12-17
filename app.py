@@ -96,7 +96,10 @@ with st.form("event_form", clear_on_submit=True):
     st.markdown("**To**")
     to_col1, to_col2 = st.columns(2)
     with to_col1:
-        to_date = st.date_input("Date", value=datetime.date.today(), key="to_date")
+        # Ensure to_date min_value matches from_date
+        # Ensure default value is valid if from_date is in future
+        default_to = max(datetime.date.today(), from_date)
+        to_date = st.date_input("Date", value=default_to, min_value=from_date, key="to_date")
     with to_col2:
         to_time = st.time_input("Time", value=datetime.time(23, 59), key="to_time", step=60)
 
@@ -146,19 +149,32 @@ if st.session_state.entries:
     start_idx = st.session_state.page * rows_per_page
     end_idx = min(start_idx + rows_per_page, total_entries)
 
-    # Prepare display data
-    display_data = []
-    for i, entry in enumerate(st.session_state.entries[start_idx:end_idx], start=start_idx + 1):
-        display_data.append({
-            "#": i,
-            "From": entry["from_date"].strftime("%Y-%m-%d %H:%M"),
-            "To": entry["to_date"].strftime("%Y-%m-%d %H:%M"),
-            "Repeats": entry["repeats"],
-            "Description": entry["description"]
-        })
+    # Header
+    h_col1, h_col2, h_col3, h_col4, h_col5 = st.columns([2, 2, 1, 3, 1])
+    h_col1.markdown("**From**")
+    h_col2.markdown("**To**")
+    h_col3.markdown("**Repeats**")
+    h_col4.markdown("**Description**")
+    h_col5.markdown("**Action**")
 
-    # Display table
-    st.table(display_data)
+    # Display rows
+    for i, entry in enumerate(st.session_state.entries[start_idx:end_idx]):
+        actual_index = start_idx + i
+        c1, c2, c3, c4, c5 = st.columns([2, 2, 1, 3, 1])
+        
+        c1.write(entry["from_date"].strftime("%Y-%m-%d %H:%M"))
+        c2.write(entry["to_date"].strftime("%Y-%m-%d %H:%M"))
+        c3.write(entry["repeats"])
+        c4.write(entry["description"])
+        
+        if c5.button("🗑️", key=f"delete_{actual_index}", help="Delete this event"):
+            st.session_state.entries.pop(actual_index)
+            # Adjust page if needed (if we deleted the last item on a page)
+            if not st.session_state.entries:
+                st.session_state.page = 0
+            elif st.session_state.page > (len(st.session_state.entries) - 1) // rows_per_page:
+                st.session_state.page = max(0, st.session_state.page - 1)
+            st.rerun()
 
     # Pagination controls
     col1, col2, col3 = st.columns([1, 2, 1])

@@ -90,10 +90,17 @@ def sync_dates():
             st.session_state.to_date = st.session_state.from_date
 
 # From datetime (date + time on same row)
+# Initialize date state if needed to avoid "default value" warnings
+if "from_date" not in st.session_state:
+    st.session_state.from_date = datetime.date.today()
+if "to_date" not in st.session_state:
+    st.session_state.to_date = max(datetime.date.today(), st.session_state.from_date)
+
+# From datetime (date + time on same row)
 st.markdown("**From**")
 from_col1, from_col2 = st.columns(2)
 with from_col1:
-    from_date = st.date_input("Date", value=datetime.date.today(), key="from_date", on_change=sync_dates)
+    from_date = st.date_input("Date", key="from_date", on_change=sync_dates)
 with from_col2:
     from_time = st.time_input("Time", value=datetime.time(0, 0), key="from_time", step=60)
 
@@ -103,7 +110,7 @@ to_col1, to_col2 = st.columns(2)
 with to_col1:
     # Ensure default value is valid if from_date is in future
     # Using min_value ensures the UI respects the constraint
-    to_date = st.date_input("Date", value=max(datetime.date.today(), from_date), min_value=from_date, key="to_date")
+    to_date = st.date_input("Date", min_value=from_date, key="to_date")
 with to_col2:
     to_time = st.time_input("Time", value=datetime.time(23, 59), key="to_time", step=60)
 
@@ -173,7 +180,7 @@ if st.session_state.entries:
     end_idx = min(start_idx + rows_per_page, total_entries)
 
     # Header
-    h_col1, h_col2, h_col3, h_col4, h_col5 = st.columns([2, 2, 1, 3, 1])
+    h_col1, h_col2, h_col3, h_col4, h_col5 = st.columns([2, 2, 1.5, 3, 1])
     h_col1.markdown("**From**")
     h_col2.markdown("**To**")
     h_col3.markdown("**Repeats**")
@@ -183,7 +190,7 @@ if st.session_state.entries:
     # Display rows
     for i, entry in enumerate(st.session_state.entries[start_idx:end_idx]):
         actual_index = start_idx + i
-        c1, c2, c3, c4, c5 = st.columns([2, 2, 1, 3, 1])
+        c1, c2, c3, c4, c5 = st.columns([2, 2, 1.5, 3, 1])
         
         c1.write(entry["from_date"].strftime("%Y-%m-%d %H:%M"))
         c2.write(entry["to_date"].strftime("%Y-%m-%d %H:%M"))

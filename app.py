@@ -116,35 +116,43 @@ repeats = st.selectbox(
 
 description = st.text_input("Description", placeholder="Enter event description", key="description")
 
-submitted = st.button("Add Event", use_container_width=True)
+if "add_error" not in st.session_state:
+    st.session_state.add_error = None
 
-if submitted:
-    if description.strip():
-        from_datetime = datetime.datetime.combine(from_date, from_time)
-        to_datetime = datetime.datetime.combine(to_date, to_time)
+def add_event_callback():
+    # Get values from session state
+    # Note: widgets must have keys corresponding to these names
+    desc = st.session_state.description
+    
+    if desc.strip():
+        f_date = st.session_state.from_date
+        f_time = st.session_state.from_time
+        t_date = st.session_state.to_date
+        t_time = st.session_state.to_time
+        rep = st.session_state.repeats
+        
+        from_datetime = datetime.datetime.combine(f_date, f_time)
+        to_datetime = datetime.datetime.combine(t_date, t_time)
 
         if to_datetime >= from_datetime:
             st.session_state.entries.append({
                 "from_date": from_datetime,
                 "to_date": to_datetime,
-                "repeats": repeats,
-                "description": description.strip()
+                "repeats": rep,
+                "description": desc.strip()
             })
-            st.success("Event added!")
-            
-            # Reset form fields
-            # We can't easily reset 'value' of widgets directly in same run without rerun, 
-            # but updating session state works for next run.
+            # Clear description and error
             st.session_state.description = ""
-            # Optional: reset dates to defaults if desired, or keep them. 
-            # Let's keep dates as is for easier repeat entry, or reset to today?
-            # User didn't specify, but "clear_on_submit=True" behavior implies clearing.
-            # Let's reset description at least. Dates are often useful to keep.
-            st.rerun()
+            st.session_state.add_error = None
         else:
-            st.error("End date/time must be after start date/time.")
+            st.session_state.add_error = "End date/time must be after start date/time."
     else:
-        st.error("Please enter a description.")
+        st.session_state.add_error = "Please enter a description."
+
+st.button("Add Event", use_container_width=True, on_click=add_event_callback)
+
+if st.session_state.add_error:
+    st.error(st.session_state.add_error)
 
 # Table section
 st.divider()
